@@ -1,9 +1,13 @@
 ---
 title: "Lab 4: Childcare Costs in California"
-author: "Ainsley Forster!"
+author: "Ainsley Forster"
 format: html
 editor: source
 embed-resources: true
+code-tools: true
+echo: true
+code-fold: true
+theme: minty
 ---
 
 ## The Data
@@ -94,6 +98,8 @@ median_income_by_reagion_over_time <- ca_childcare |>
               names_from = study_year, 
               values_from = median_mhi) |>
   arrange(`2018`)
+
+print(median_income_by_reagion_over_time)
   
 ```
 
@@ -114,13 +120,15 @@ lowest_median_weekly_price_2018 <- ca_childcare |>
             .groups = "drop") |>
   slice_min(median_mc)
 
+print(lowest_median_weekly_price_2018)
+
 ```
 
 **6. The following plot shows, for all ten regions, the change over time of the full-time median price for center-based childcare for infants, toddlers, and preschoolers. Recreate the plot. You do not have to replicate the exact colors or theme, but your plot should have the same content, including the order of the facets and legend, reader-friendly labels, axes breaks, and a loess smoother.**
 
 ![Plot to recreate](https://atheobold.github.io/groupworthy-data-science/labs/instructions/images/lab-4-recreate-plot.png)
 
-```{r}
+```{r, fig.width=10, fig.height = 3}
 #| label: recreate-plot
 
 plot <- ca_childcare |>
@@ -128,18 +136,43 @@ plot <- ca_childcare |>
   mutate(study_year = factor(study_year, 
                              levels = c("2008", "2010", "2012", "2014", 
                                         "2016", "2018"))) |>
+  pivot_longer(cols = c(mc_infant, mc_toddler, mc_preschool),
+               names_to = "age_group",
+               values_to = "price"
+               ) |>
+  filter(!is.na(study_year)) |>
+  mutate(age_group = recode(age_group,
+                            "mc_infant" = "Infant",
+                            "mc_toddler" = "Toddler",
+                            "mc_preschool" = "Preschool"),
+         census_region = recode(census_region,
+                            "superior_california" = "Superior California",
+                            "north_coast" = "North Coast",
+                            "san_francisco_bay_area" = "San Francisco Bay Area",
+                            "northern_san_juaquin_valley" = "Northern San Juaquin Valley",
+                            "central_coast" = "Central Coast",
+                            "southern_san_juaquin_valley" = "Southern San Juaquin Valley",
+                            "los_angeles_county" = "Los Angeles County",
+                            "orange_county" = "Orange County",
+                            "san_diego" = "San Diego",
+                            "inland_empire" = "Inland Empire")
+  ) |>
   ggplot(mapping = aes(x = study_year, 
-                       y = mc_infant,
+                       y = price,
                        color = census_region)
          )+
   geom_point()+
-  geom_smooth(method = "loess")+
+  geom_smooth(method = "loess", aes(group = census_region))+
   labs(x= "Study Year",
        y= "",
        subtitle = "Weekly Median Price for Center-Based Childcare ($)",
-       color = "California Region")
+       color = "California Region")+
+  facet_wrap(~ age_group) # I got stuck and referenced this website: 
+# https://www.geeksforgeeks.org/how-do-i-split-my-x-axis-into-multiple-plots-in-ggplot-in-r/
 
 print(plot)
+
+
 
 ```
 
@@ -179,7 +212,7 @@ summary(reg_mod1)
 
 **9. Using the output from `summary()`, write out the estimated regression line (recall: $y = mx + b$).**
 
-The estimated regression line is: mc_infant = 0.002241(mhi_2018) + 131.7
+The estimated regression line is: mc_infant = 0.002241(mhi_2018) + 131.7$
 
 **10. Do you have evidence to conclude there is a relationship between the median household income and the median weekly cost of center-based childcare for infants in California? Cite values from your `summary()` output to support your claim!**
 
